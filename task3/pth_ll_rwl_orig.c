@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
    for (i = 0; i < thread_count; i++)
       pthread_join(thread_handles[i], NULL);
    GET_TIME(finish);
-   printf("Elapsed time = %e seconds\n", finish - start);
+   printf("Elapsed time = %f seconds\n", finish - start);
    printf("Total ops = %d\n", total_ops);
    printf("member ops = %d\n", member_count);
    printf("insert ops = %d\n", insert_count);
