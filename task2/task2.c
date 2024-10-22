@@ -5,14 +5,13 @@
 #include <math.h>
 #include "timer.h"
 
-// Параметры для вычисления множества Мандельброта
-#define MAX_ITER 1000 // Максимальное количество итераций
-#define X_MIN -2.0    // Минимум по оси X
-#define X_MAX 1.0     // Максимум по оси X
-#define Y_MIN -1.5    // Минимум по оси Y
-#define Y_MAX 1.5     // Максимум по оси Y
+#define MAX_ITER 1000
+#define X_MIN -2.0
+#define X_MAX 1.0
+#define Y_MIN -1.5
+#define Y_MAX 1.5
 
-pthread_mutex_t file_mutex; // Глобальный мьютекс для синхронизации записи в файл
+pthread_mutex_t file_mutex;
 
 typedef struct {
     int thread_id;
@@ -21,19 +20,17 @@ typedef struct {
     FILE *file;
 } thread_data_t;
 
-// Функция для проверки принадлежности точки к множеству Мандельброта
 int mandelbrot(double complex c) {
     double complex z = 0;
     int iter;
     for (iter = 0; iter < MAX_ITER; iter++) {
         z = z*z + c;
         if (cabs(z) > 2.0)
-            return 0; // Точка не принадлежит множеству
+            return 0;
     }
-    return 1; // Точка принадлежит множеству
+    return 1;
 }
 
-// Функция для многопоточной генерации точек
 void *generate_points(void *arg) {
     thread_data_t *data = (thread_data_t*)arg;
     int start = (data->npoints / data->nthreads) * data->thread_id;
@@ -47,7 +44,6 @@ void *generate_points(void *arg) {
             double y = Y_MIN + j * dy;
             double complex c = x + y * I;
             if (mandelbrot(c)) {
-                // Критическая секция: запись в файл
                 pthread_mutex_lock(&file_mutex);
                 fprintf(data->file, "%lf,%lf\n", x, y);
                 pthread_mutex_unlock(&file_mutex);
@@ -67,17 +63,14 @@ int main(int argc, char *argv[]) {
     int nthreads = atoi(argv[1]);
     int npoints = atoi(argv[2]);
 
-    // Открываем файл для записи
     FILE *file = fopen("mandelbrot.csv", "w");
     if (!file) {
         perror("Error opening file");
         return 1;
     }
 
-    // Инициализация mutex для доступа к файлу
     pthread_mutex_init(&file_mutex, NULL);
 
-    // Создаем потоки
     pthread_t threads[nthreads];
     thread_data_t thread_data[nthreads];
 
@@ -96,12 +89,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Ожидаем завершения всех потоков
     for (int i = 0; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
 
-    // Закрываем файл и уничтожаем mutex
     fclose(file);
     pthread_mutex_destroy(&file_mutex);
 

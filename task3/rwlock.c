@@ -1,6 +1,5 @@
 #include "rwlock.h"
 
-// Инициализация rwlock
 int my_rwlock_init(my_rwlock_t *rwlock) {
     if (pthread_mutex_init(&rwlock->mutex, NULL) != 0) {
         return -1;
@@ -20,7 +19,6 @@ int my_rwlock_init(my_rwlock_t *rwlock) {
     return 0;
 }
 
-// Уничтожение rwlock
 int my_rwlock_destroy(my_rwlock_t *rwlock) {
     pthread_mutex_destroy(&rwlock->mutex);
     pthread_cond_destroy(&rwlock->readers_cond);
@@ -28,7 +26,6 @@ int my_rwlock_destroy(my_rwlock_t *rwlock) {
     return 0;
 }
 
-// Функция блокировки для чтения
 int my_rwlock_rdlock(my_rwlock_t *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
     while (rwlock->waiting_writers > 0 || rwlock->writing) {
@@ -39,7 +36,6 @@ int my_rwlock_rdlock(my_rwlock_t *rwlock) {
     return 0;
 }
 
-// Функция блокировки для записи
 int my_rwlock_wrlock(my_rwlock_t *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
     rwlock->waiting_writers++;
@@ -52,7 +48,6 @@ int my_rwlock_wrlock(my_rwlock_t *rwlock) {
     return 0;
 }
 
-// Функция разблокировки
 int my_rwlock_unlock(my_rwlock_t *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
     if (rwlock->writing) {

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "my_rand.h"
 
-#define MR_MULTIPLIER 279470273 
+#define MR_MULTIPLIER 279470273
 #define MR_INCREMENT 0
 #define MR_MODULUS 4294967291U
 #define MR_DIVISOR ((double) 4294967291U)
@@ -10,7 +10,7 @@
 
 #ifdef _MAIN_
 int main(void) {
-   int n, i; 
+   int n, i;
    unsigned seed = 1, x;
    double y;
 
