@@ -6,19 +6,32 @@
 Выполнили [Шадрин Антон](https://github.com/AntonShadrinNN), [Болотина Светлана](https://github.com/Sveboo)
 ### Task1
 
-[Source code](task1)
+[Source code](lab1/task1)
 
-[Report](task1/README.md)
+[Report](lab1/task1/README.md)
 
 ### Task2
 
-[Source code](task2)
+[Source code](lab1/task2)
 
-[Report](task2/README.md)
+[Report](lab1/task2/README.md)
 
 ### Task3
 
-[Source code](task3)
+[Source code](lab1/task3)
 
-[Report](task3/README.md)
+[Report](lab1/task3/README.md)
 
+## Lab2
+Выполнили [Шадрин Антон](https://github.com/AntonShadrinNN), [Болотина Светлана](https://github.com/Sveboo)
+### Task1
+
+[Source code](lab2/task1)
+
+[Report](lab2/task1/README.md)
+
+### Task2
+
+[Source code](lab2/task2)
+
+[Report](lab2/task2/README.md)
