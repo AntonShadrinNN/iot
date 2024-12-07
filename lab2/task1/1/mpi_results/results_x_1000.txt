@@ -1,0 +1,17 @@
+Configuration => Elapsed time
+mpiexec -np 1 ./main 1000 1000 => 2.48706 ms
+mpiexec -np 2 ./main 1000 1000 => 1.22742 ms
+mpiexec -np 3 ./main 1000 1000 => 0.889784 ms
+mpiexec -np 4 ./main 1000 1000 => 1.34827 ms
+mpiexec -np 5 ./main 1000 1000 => 0.636997 ms
+mpiexec -np 6 ./main 1000 1000 => 0.937563 ms
+mpiexec -np 7 ./main 1000 1000 => 0.517879 ms
+mpiexec -np 8 ./main 1000 1000 => 0.704754 ms
+mpiexec -np 9 ./main 1000 1000 => 0.619553 ms
+mpiexec -np 10 ./main 1000 1000 => 0.562513 ms
+mpiexec -np 11 ./main 1000 1000 => 0.653716 ms
+mpiexec -np 12 ./main 1000 1000 => 0.464076 ms
+mpiexec -np 13 ./main 1000 1000 => 0.423243 ms
+mpiexec -np 14 ./main 1000 1000 => 1.16434 ms
+mpiexec -np 15 ./main 1000 1000 => 0.713188 ms
+mpiexec -np 16 ./main 1000 1000 => 0.678975 ms

@@ -28,7 +28,14 @@
 
 [Source code](lab2/task1)
 
-[Report](lab2/task1/README.md)
+[Global Task 1 Report](lab2/task1/README.md)
+
+- Multiplication by rows
+  - [Report](./lab2/task1/1/README.md)
+- Multiplication by columns
+  - [Report](./lab2/task1/2/README.md)
+- Multiplication by blocks
+  - [Report](./lab2/task1/3/README.md)
 
 ### Task2
 

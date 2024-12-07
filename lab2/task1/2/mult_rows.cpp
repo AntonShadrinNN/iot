@@ -6,10 +6,10 @@
 #include <algorithm>
 
 // Calculate matrix multiplication
-void matrixVectorMultiplyByBlocks(const float* matrix, const float* vector, float* result, size_t numCols, size_t startRow, size_t endRow, size_t startCol, size_t endCol) {
-    for (size_t i = startRow; i < endRow; ++i) {
-        for (size_t j = startCol; j < endCol; ++j) {
-            result[i] += matrix[i * numCols + j] * vector[j];
+void matrixVectorMultiplyByCols(const float* matrix, const float* vector, float* result, size_t numRows, size_t numCols, size_t columnStart, size_t columnEnd) {
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = columnStart; j < columnEnd; ++j) {
+            result[i] = result[i] + (matrix[i * numCols + j] * vector[j]);
         }
     }
 }
@@ -52,10 +52,6 @@ int main(int argc, char** argv) {
 
     // Vector size must be equal to matrix columns count
     int vecSize = cols;
-    int blocksOneDim = static_cast<int>(std::sqrt(procCount));
-    int totalBlocks = blocksOneDim * blocksOneDim;
-    int blockRows = rows / blocksOneDim;
-    int blockCols = cols / blocksOneDim;
 
     // Create vars with corresponding types
     std::vector<float> matrix(rows * cols), vector(vecSize), localResult(rows), result;
@@ -63,7 +59,7 @@ int main(int argc, char** argv) {
     // If initial process
     if (mpiRank == 0) {
         matrix.resize(rows * cols);
-        result.resize(rows); // Инициализируем result с нужным размером
+        result.resize(cols);
 
         generateRandomValues(matrix.data(), rows * cols);
         generateRandomValues(vector.data(), vecSize);
@@ -92,38 +88,39 @@ int main(int argc, char** argv) {
 
     MPI_Bcast(matrix.data(), rows * cols, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    size_t startRow = (mpiRank / blocksOneDim) * blockRows;
-    size_t endRow = startRow + blockRows;
-    size_t startCol = (mpiRank % blocksOneDim) * blockCols;
-    size_t endCol = startCol + blockCols;
+    size_t columnsPerProcess = 1;
+    size_t columnStart = 0;
+    size_t columnEnd = 0;
 
-    if (mpiRank < totalBlocks) {
-        if (mpiRank == totalBlocks - 1) {
-            endRow = rows;
-            endCol = cols;
-        } else if ((mpiRank + 1) % blocksOneDim == 0) {
-            endCol = cols;
-        } else if ((mpiRank + 1) > totalBlocks - blocksOneDim) {
-            endRow = rows;
+    if (mpiRank < cols) {
+        if (procCount <= cols) {
+            columnsPerProcess = cols / procCount;
+        }
+        columnStart = mpiRank * columnsPerProcess;
+        columnEnd = columnStart + columnsPerProcess;
+
+        if (mpiRank == procCount - 1) {
+            columnEnd = cols;
         }
     }
+
 
     // Perf test
     size_t iters = 100;
     for (size_t i = 0; i < iters; ++i) {
-        startTime = MPI_Wtime();
-        if (mpiRank < totalBlocks) {
-            matrixVectorMultiplyByBlocks(matrix.data(), vector.data(), localResult.data(), cols, startRow, endRow, startCol, endCol);
+        if (mpiRank < cols) {
+            startTime = MPI_Wtime();
+            matrixVectorMultiplyByCols(matrix.data(), vector.data(), localResult.data(), rows, cols, columnStart, columnEnd);
+            endTime = MPI_Wtime();
+            duration = duration + (endTime - startTime);
         }
-        endTime = MPI_Wtime();
-        duration += endTime - startTime;
         // Clear vector
         std::fill(localResult.begin(), localResult.end(), 0);
     }
     duration = duration / static_cast<double>(iters);
 
-    if (mpiRank < totalBlocks) {
-        matrixVectorMultiplyByBlocks(matrix.data(), vector.data(), localResult.data(), cols, startRow, endRow, startCol, endCol);
+    if (mpiRank < cols) {
+        matrixVectorMultiplyByCols(matrix.data(), vector.data(), localResult.data(), rows, cols, columnStart, columnEnd);
     }
 
     if (mpiRank == 0) {

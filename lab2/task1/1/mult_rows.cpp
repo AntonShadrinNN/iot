@@ -6,19 +6,20 @@
 #include <algorithm>
 
 // Calculate matrix multiplication
-void matrixVectorMultiplyByBlocks(const float* matrix, const float* vector, float* result, size_t numCols, size_t startRow, size_t endRow, size_t startCol, size_t endCol) {
-    for (size_t i = startRow; i < endRow; ++i) {
-        for (size_t j = startCol; j < endCol; ++j) {
-            result[i] += matrix[i * numCols + j] * vector[j];
+void matrixVectorMultiplyByRows(const float* matrix, const float* vector, float* result, size_t rows, size_t cols) {
+    for (size_t i = 0; i < rows; ++i) {
+        result[i] = 0;
+        for (size_t j = 0; j < cols; ++j) {
+            result[i] = result[i] + (matrix[i * cols + j] * vector[j]);
         }
     }
 }
 
 // Fill matrix/vector with random values
 void generateRandomValues(float* array, size_t size) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+    static std::random_device rd;  // Только один объект random_device
+    static std::mt19937 gen(rd()); // Генератор случайных чисел
+    static std::uniform_real_distribution<float> dist(-1.0f, 1.0f); // Распределение
 
     for (size_t i = 0; i < size; ++i) {
         array[i] = dist(gen);
@@ -52,18 +53,18 @@ int main(int argc, char** argv) {
 
     // Vector size must be equal to matrix columns count
     int vecSize = cols;
-    int blocksOneDim = static_cast<int>(std::sqrt(procCount));
-    int totalBlocks = blocksOneDim * blocksOneDim;
-    int blockRows = rows / blocksOneDim;
-    int blockCols = cols / blocksOneDim;
+    // Share rows between procCount processes
+    int interimRows = rows / procCount;
+    // Total matrix elements count
+    int interimElements = interimRows * cols;
 
     // Create vars with corresponding types
-    std::vector<float> matrix(rows * cols), vector(vecSize), localResult(rows), result;
+    std::vector<float> matrix, vector(vecSize), localMatrix(interimElements), localResult(interimRows), result;
 
     // If initial process
     if (mpiRank == 0) {
         matrix.resize(rows * cols);
-        result.resize(rows); // Инициализируем result с нужным размером
+        result.resize(rows);
 
         generateRandomValues(matrix.data(), rows * cols);
         generateRandomValues(vector.data(), vecSize);
@@ -87,54 +88,41 @@ int main(int argc, char** argv) {
 #endif
     }
 
-    // Ensure matrix and vector are properly initialized before broadcasting
+    MPI_Scatter(matrix.data(), interimElements, MPI_FLOAT, localMatrix.data(), interimElements, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Bcast(vector.data(), vecSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    MPI_Bcast(matrix.data(), rows * cols, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    size_t startRow = (mpiRank / blocksOneDim) * blockRows;
-    size_t endRow = startRow + blockRows;
-    size_t startCol = (mpiRank % blocksOneDim) * blockCols;
-    size_t endCol = startCol + blockCols;
-
-    if (mpiRank < totalBlocks) {
-        if (mpiRank == totalBlocks - 1) {
-            endRow = rows;
-            endCol = cols;
-        } else if ((mpiRank + 1) % blocksOneDim == 0) {
-            endCol = cols;
-        } else if ((mpiRank + 1) > totalBlocks - blocksOneDim) {
-            endRow = rows;
-        }
-    }
 
     // Perf test
     size_t iters = 100;
     for (size_t i = 0; i < iters; ++i) {
         startTime = MPI_Wtime();
-        if (mpiRank < totalBlocks) {
-            matrixVectorMultiplyByBlocks(matrix.data(), vector.data(), localResult.data(), cols, startRow, endRow, startCol, endCol);
-        }
+        matrixVectorMultiplyByRows(localMatrix.data(), vector.data(), localResult.data(), interimRows, cols);
         endTime = MPI_Wtime();
-        duration += endTime - startTime;
+        duration = duration + (endTime - startTime);
         // Clear vector
         std::fill(localResult.begin(), localResult.end(), 0);
     }
     duration = duration / static_cast<double>(iters);
 
-    if (mpiRank < totalBlocks) {
-        matrixVectorMultiplyByBlocks(matrix.data(), vector.data(), localResult.data(), cols, startRow, endRow, startCol, endCol);
-    }
+    matrixVectorMultiplyByRows(localMatrix.data(), vector.data(), localResult.data(), interimRows, cols);
 
     if (mpiRank == 0) {
         std::cout << "Elapsed time: " << duration * 1000.0 << " ms\n";
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Reduce(localResult.data(), result.data(), rows, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    // Results aggregation
+    MPI_Gather(localResult.data(), interimRows, MPI_FLOAT, result.data(), interimRows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // If initial process
     if (mpiRank == 0) {
+        size_t remainingRows = rows % procCount;
+        if (remainingRows >= 1) {
+            size_t offset = rows - remainingRows;
+            startTime = MPI_Wtime();
+            matrixVectorMultiplyByRows(matrix.data() + cols * offset, vector.data(), result.data() + offset, remainingRows, cols);
+            endTime = MPI_Wtime();
+            duration = duration + (endTime - startTime);
+        }
+
 #ifdef DEBUG
         // Print the resulting matrix
         std::cout << "Resulting Matrix: \n";
