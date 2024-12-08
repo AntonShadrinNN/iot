@@ -38,3 +38,9 @@
 ![speedup_5000](./mpi_plots/speedup_x_5000.png)
 ![speedup_7000](./mpi_plots/speedup_x_7000.png)
 ![speedup_10000](./mpi_plots/speedup_x_10000.png)
+
+### Efficency
+![efficency_1000](./mpi_plots/efficiency_x_1000.png)
+![efficency_5000](./mpi_plots/efficiency_x_5000.png)
+![efficency_7000](./mpi_plots/efficiency_x_7000.png)
+![efficency_10000](./mpi_plots/efficiency_x_10000.png)

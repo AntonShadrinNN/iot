@@ -22,6 +22,10 @@ def calculate_speedup(elapsed_times):
     base_time = elapsed_times[0]
     return [base_time / time for time in elapsed_times]
 
+def calculate_efficiency(speedup, process_counts):
+    """Calculates efficiency as speedup divided by the number of processes."""
+    return [s / p for s, p in zip(speedup, process_counts)]
+
 def plot_results(process_counts, elapsed_times, title, output_file):
     """Plots the results and saves the graph as an image."""
     plt.figure(figsize=(10, 6))
@@ -43,6 +47,20 @@ def plot_speedup(process_counts, speedup, title, output_file):
 
     plt.xlabel('Number of Processes')
     plt.ylabel('Speedup')
+    plt.title(title)
+    plt.grid(True)
+    plt.legend()
+
+    plt.savefig(output_file)
+    plt.show()
+
+def plot_efficiency(process_counts, efficiency, title, output_file):
+    """Plots the efficiency results and saves the graph as an image."""
+    plt.figure(figsize=(10, 6))
+    plt.plot(process_counts, efficiency, marker='o', linestyle='-', color='r', label='Efficiency')
+
+    plt.xlabel('Number of Processes')
+    plt.ylabel('Efficiency')
     plt.title(title)
     plt.grid(True)
     plt.legend()
@@ -72,6 +90,12 @@ def main():
             speedup_title = f"Speedup vs. Number of Processes (x={x_value})"
             speedup_file = os.path.join(output_dir, f"speedup_x_{x_value}.png")
             plot_speedup(process_counts, speedup, speedup_title, speedup_file)
+
+            # Plot efficiency
+            efficiency = calculate_efficiency(speedup, process_counts)
+            efficiency_title = f"Efficiency vs. Number of Processes (x={x_value})"
+            efficiency_file = os.path.join(output_dir, f"efficiency_x_{x_value}.png")
+            plot_efficiency(process_counts, efficiency, efficiency_title, efficiency_file)
 
     print(f"Plots saved in the '{output_dir}' directory.")
 
